@@ -1975,6 +1975,16 @@
           </div>
         </div>
 
+        <p style="font-size:11px; letter-spacing:0.2em; color:var(--text-tertiary); margin-bottom:1rem; margin-top:2rem;">進行中のセッション</p>
+        <div id="my-active-list" class="session-list">
+          <p style="font-size:13px; color:var(--text-tertiary); padding:1.5rem 0; text-align:center; line-height:1.9;">進行中のセッションはありません。</p>
+        </div>
+
+        <p style="font-size:11px; letter-spacing:0.2em; color:var(--text-tertiary); margin-bottom:1rem; margin-top:2rem;">フィードバック待ちのセッション</p>
+        <div id="my-feedback-list" class="session-list">
+          <p style="font-size:13px; color:var(--text-tertiary); padding:1.5rem 0; text-align:center; line-height:1.9;">フィードバック待ちのセッションはありません。</p>
+        </div>
+
         <p style="font-size:11px; letter-spacing:0.2em; color:var(--text-tertiary); margin-bottom:1rem; margin-top:2rem;">参加確定のセッション</p>
         <div id="my-joined-list" class="session-list">
           <p style="font-size:13px; color:var(--text-tertiary); padding:1.5rem 0; text-align:center; line-height:1.9;">参加確定のセッションはありません。</p>
@@ -3146,12 +3156,24 @@
   async function loadMySessions() {
     const joinedList = document.getElementById('my-joined-list');
     const pendingList = document.getElementById('my-pending-list');
-    if (!joinedList && !pendingList) return;
+    const activeList = document.getElementById('my-active-list');
+    const feedbackList = document.getElementById('my-feedback-list');
+    if (!joinedList && !pendingList && !activeList && !feedbackList) return;
     const user = await getCurrentUser();
     if (!user) return;
 
-    const emptyJoined = '<p style="font-size:13px; color:var(--text-tertiary); padding:1.5rem 0; text-align:center; line-height:1.9;">参加確定のセッションはありません。</p>';
-    const emptyPending = '<p style="font-size:13px; color:var(--text-tertiary); padding:1.5rem 0; text-align:center; line-height:1.9;">確定待ちのセッションはありません。</p>';
+    const mkEmpty = (txt) => `<p style="font-size:13px; color:var(--text-tertiary); padding:1.5rem 0; text-align:center; line-height:1.9;">${txt}</p>`;
+    const emptyJoined = mkEmpty('参加確定のセッションはありません。');
+    const emptyPending = mkEmpty('確定待ちのセッションはありません。');
+    const emptyActive = mkEmpty('進行中のセッションはありません。');
+    const emptyFeedback = mkEmpty('フィードバック待ちのセッションはありません。');
+
+    const setAllEmpty = () => {
+      if (joinedList) joinedList.innerHTML = emptyJoined;
+      if (pendingList) pendingList.innerHTML = emptyPending;
+      if (activeList) activeList.innerHTML = emptyActive;
+      if (feedbackList) feedbackList.innerHTML = emptyFeedback;
+    };
 
     // 自分の参加記録を取得
     const { data: parts, error } = await sb
@@ -3160,11 +3182,7 @@
       .eq('user_id', user.id);
     if (error) { console.error('参加記録取得エラー:', error.message); return; }
     const ids = (parts || []).map(p => p.session_id);
-    if (ids.length === 0) {
-      if (joinedList) joinedList.innerHTML = emptyJoined;
-      if (pendingList) pendingList.innerHTML = emptyPending;
-      return;
-    }
+    if (ids.length === 0) { setAllEmpty(); return; }
 
     // 参加しているセッションの詳細を取得
     const { data: sessions, error: sErr } = await sb
@@ -3173,11 +3191,7 @@
       .in('id', ids)
       .order('created_at', { ascending: false });
     if (sErr) { console.error('セッション取得エラー:', sErr.message); return; }
-    if (!sessions || sessions.length === 0) {
-      if (joinedList) joinedList.innerHTML = emptyJoined;
-      if (pendingList) pendingList.innerHTML = emptyPending;
-      return;
-    }
+    if (!sessions || sessions.length === 0) { setAllEmpty(); return; }
 
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     // 既に自分がフィードバックを出したセッションは「完了」表示にする
@@ -3187,9 +3201,13 @@
       .eq('user_id', user.id);
     const doneSet = new Set((mineFb || []).map(f => f.session_id));
 
-    // 確定済み（確定・終了・完了）と、確定待ち（未確定）に振り分ける
-    const confirmedCards = [];
-    const pendingCards = [];
+    const now = Date.now();
+
+    // 5つの状態に振り分け
+    const confirmedCards = []; // 参加確定（開始前）
+    const pendingCards = [];   // 確定待ち（未確定）
+    const activeCards = [];    // 進行中（開始〜終了の間）
+    const feedbackCards = [];  // フィードバック待ち（終了後・未提出）＋完了
 
     sessions.forEach(s => {
       const when = s.schedule_time ? esc(s.schedule_time) : '日程調整中';
@@ -3197,44 +3215,63 @@
       const isConfirmed = (s.status === 'confirmed' || s.status === 'ended');
       const titleAttr = esc(s.title).replace(/'/g, "\\'");
 
-      if (isDone || isConfirmed) {
-        // 参加確定セクションへ
-        let rightSide, metaText;
-        if (isDone) {
-          rightSide = `<span class="status-badge status-confirmed">完了</span>`;
-          metaText = `${when} · あなたが参加`;
-        } else {
-          rightSide = `<span class="status-badge status-confirmed">参加確定</span>
-           <button class="session-join" onclick="openEndSession('${titleAttr}', '${s.id}')">セッションを終了する</button>`;
-          metaText = `${when} · 確定済み`;
+      // 開始・終了時刻（scheduled_at と duration_minutes から算出）
+      let startMs = null, endMs = null;
+      if (s.scheduled_at) {
+        const st = new Date(s.scheduled_at).getTime();
+        if (!isNaN(st)) {
+          startMs = st;
+          const dur = (s.duration_minutes && s.duration_minutes > 0) ? s.duration_minutes : 60;
+          endMs = st + dur * 60000;
         }
-        confirmedCards.push(`
-      <div class="session-card">
+      }
+
+      const card = (extraMeta, rightSide, opacity) => `
+      <div class="session-card"${opacity ? ` style="opacity:${opacity};"` : ''}>
         <div>
           <p class="session-q">${esc(s.title)}</p>
-          <p class="session-meta">${metaText}</p>
+          <p class="session-meta">${when}${extraMeta ? ' · ' + extraMeta : ''}</p>
         </div>
         <div class="session-status">
           ${rightSide}
         </div>
-      </div>`);
-      } else {
-        // 確定待ちセクションへ（薄く表示）
-        pendingCards.push(`
-      <div class="session-card" style="opacity:0.6;">
-        <div>
-          <p class="session-q">${esc(s.title)}</p>
-          <p class="session-meta">${when} · ホストの確定待ち</p>
-        </div>
-        <div class="session-status">
-          <span class="status-badge status-waiting">確定待ち</span>
-        </div>
-      </div>`);
+      </div>`;
+
+      // 1) フィードバック提出済み → 完了（フィードバック待ちセクションに完了として表示）
+      if (isDone) {
+        feedbackCards.push(card('あなたが参加', `<span class="status-badge status-confirmed">完了</span>`, null));
+        return;
       }
+
+      // 2) 未確定 → 確定待ち
+      if (!isConfirmed) {
+        pendingCards.push(card('ホストの確定待ち', `<span class="status-badge status-waiting">確定待ち</span>`, '0.6'));
+        return;
+      }
+
+      // ここから確定済み。時刻で状態を分ける
+      // 3) 時刻情報が無い、または開始前 → 参加確定
+      if (startMs === null || now < startMs) {
+        confirmedCards.push(card('確定済み', `<span class="status-badge status-confirmed">参加確定</span>`, null));
+        return;
+      }
+
+      // 4) 開始〜終了の間 → 進行中（終了ボタンあり）
+      if (now >= startMs && now < endMs) {
+        activeCards.push(card('進行中', `<span class="status-badge status-confirmed">進行中</span>
+           <button class="session-join" onclick="openEndSession('${titleAttr}', '${s.id}')">セッションを終了する</button>`, null));
+        return;
+      }
+
+      // 5) 終了時刻を過ぎた → フィードバック待ち（フィードバックを書ける）
+      feedbackCards.push(card('フィードバックを記入できます', `<span class="status-badge status-waiting">フィードバック待ち</span>
+           <button class="session-join" onclick="openFeedback('${titleAttr}', '${s.id}', false)">フィードバックを書く</button>`, null));
     });
 
     if (joinedList) joinedList.innerHTML = confirmedCards.length ? confirmedCards.join('') : emptyJoined;
     if (pendingList) pendingList.innerHTML = pendingCards.length ? pendingCards.join('') : emptyPending;
+    if (activeList) activeList.innerHTML = activeCards.length ? activeCards.join('') : emptyActive;
+    if (feedbackList) feedbackList.innerHTML = feedbackCards.length ? feedbackCards.join('') : emptyFeedback;
   }
 
   // プロフィールをDBから読み込み画面へ反映
