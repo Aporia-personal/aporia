@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Aporia 運営</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600&family=Shippori+Mincho+B1:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F8F6F1;
+    --bg2: #F1EEE6;
+    --ink: #1a1a18;
+    --sub: #5f5e58;
+    --ter: #9a9890;
+    --line: #ddd9cf;
+    --line-mid: #c8c4b8;
+    --shu: #a63a34; /* 朱：審査・注意にのみ使う */
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font-family:'Noto Serif JP', serif; font-size:14px; -webkit-font-smoothing:antialiased; }
+  button { font-family:'Noto Serif JP', serif; cursor:pointer; }
+  input, select, textarea { font-family:'Noto Serif JP', serif; font-size:13px; color:var(--ink); background:#fff; border:0.5px solid var(--line-mid); padding:8px 12px; outline:none; }
+  input:focus, select:focus, textarea:focus { border-color:var(--sub); }
+
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* ===== ログイン ===== */
+  .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
+  .login-card { width:100%; max-width:360px; border:0.5px solid var(--line); background:#fff; padding:2.5rem 2rem; }
+  .brand { font-family:'Shippori Mincho B1', serif; font-size:20px; font-weight:600; letter-spacing:0.35em; text-align:center; }
+  .brand-sub { font-size:10px; letter-spacing:0.4em; color:var(--ter); text-align:center; margin-top:0.5rem; }
+  .btn-ink { display:block; width:100%; background:var(--ink); color:var(--bg); border:none; padding:11px; font-size:12px; letter-spacing:0.2em; }
+  .btn-line { display:block; width:100%; background:none; color:var(--sub); border:0.5px solid var(--line-mid); padding:10px; font-size:12px; letter-spacing:0.15em; }
+
+  /* ===== サイドバーレイアウト ===== */
+  .shell { display:grid; grid-template-columns:220px 1fr; min-height:100vh; }
+  .sidebar { border-right:0.5px solid var(--line); padding:1.75rem 0; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; }
+  .sb-brand { font-family:'Shippori Mincho B1', serif; font-size:15px; font-weight:600; letter-spacing:0.3em; padding:0 1.5rem; }
+  .sb-role { font-size:9px; letter-spacing:0.35em; color:var(--shu); padding:0 1.5rem; margin-top:0.3rem; }
+  .sb-sec { font-size:9px; letter-spacing:0.3em; color:var(--ter); padding:0 1.5rem; margin:1.75rem 0 0.5rem; }
+  .sb-item { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.6rem 1.5rem; font-size:12.5px; letter-spacing:0.08em; color:var(--sub); cursor:pointer; border-left:2px solid transparent; }
+  .sb-item:hover { color:var(--ink); background:rgba(0,0,0,0.02); }
+  .sb-item.on { color:var(--ink); border-left-color:var(--ink); background:rgba(0,0,0,0.03); font-weight:500; }
+  .sb-item .cnt { font-size:10px; min-width:20px; text-align:center; padding:1px 6px; border:0.5px solid var(--shu); color:var(--shu); border-radius:9px; display:none; }
+  .sb-item .cnt.show { display:inline-block; }
+  .sb-foot { margin-top:auto; padding:1rem 1.5rem 0; }
+  .sb-foot button { background:none; border:none; font-size:11px; color:var(--ter); letter-spacing:0.1em; text-decoration:underline; padding:0.25rem 0; display:block; }
+
+  .main { padding:2.25rem 2.5rem 5rem; max-width:1060px; width:100%; }
+  .page { display:none; }
+  .page.on { display:block; }
+  .page-title { font-family:'Shippori Mincho B1', serif; font-size:17px; font-weight:600; letter-spacing:0.2em; margin-bottom:0.4rem; }
+  .page-sub { font-size:11.5px; color:var(--ter); letter-spacing:0.05em; margin-bottom:2rem; line-height:1.8; }
+
+  .sec-label { font-size:10px; letter-spacing:0.3em; color:var(--ter); margin:2.25rem 0 1rem; display:flex; align-items:center; gap:0.75rem; }
+  .sec-label::after { content:''; flex:1; border-top:0.5px solid var(--line); }
+
+  /* ===== KPI ===== */
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
+  .kpi { border:0.5px solid var(--line); background:#fff; padding:1.4rem 1.5rem; }
+  .kpi .k { font-size:10px; letter-spacing:0.25em; color:var(--ter); margin-bottom:0.8rem; }
+  .kpi .v { font-family:'Shippori Mincho B1', serif; font-size:32px; font-weight:700; letter-spacing:0.02em; line-height:1; }
+  .kpi .v .unit { font-size:14px; font-weight:500; color:var(--sub); margin-left:2px; letter-spacing:0.1em; }
+  .kpi .d { font-size:11px; color:var(--sub); margin-top:0.7rem; line-height:1.8; }
+  .kpi.click { cursor:pointer; }
+  .kpi.click:hover { border-color:var(--line-mid); }
+  .kpi.attn { border-color:var(--shu); }
+  .kpi.attn .v { color:var(--shu); }
+  .chart-card { border:0.5px solid var(--line); background:#fff; padding:1.4rem 1.5rem; }
+  .plan-bar { display:flex; height:14px; border:0.5px solid var(--line-mid); overflow:hidden; margin-top:0.9rem; }
+  .plan-bar .seg1 { background:var(--bg2); }
+  .plan-bar .seg2 { background:#b9b3a3; }
+  .plan-bar .seg3 { background:var(--ink); }
+  .legend { display:flex; gap:1.25rem; flex-wrap:wrap; margin-top:0.7rem; font-size:11px; color:var(--sub); }
+  .legend .sw { display:inline-block; width:9px; height:9px; margin-right:5px; border:0.5px solid var(--line-mid); vertical-align:baseline; }
+
+  /* ===== 審査カード ===== */
+  .review-card { border:0.5px solid var(--line); background:#fff; padding:1.25rem 1.5rem; margin-bottom:12px; }
+  .rc-head { display:flex; align-items:center; gap:10px; margin-bottom:0.6rem; flex-wrap:wrap; }
+  .type-badge { font-size:10px; letter-spacing:0.15em; padding:3px 10px; border:0.5px solid var(--line-mid); color:var(--sub); }
+  .type-badge.off { border-color:var(--ink); color:var(--ink); }
+  .rc-title { font-family:'Shippori Mincho B1', serif; font-size:15px; font-weight:600; line-height:1.6; }
+  .rc-meta { font-size:11px; color:var(--ter); letter-spacing:0.04em; line-height:1.8; }
+  .rc-bg { font-size:12px; color:var(--sub); line-height:1.9; margin-top:0.5rem; }
+  .rc-actions { display:flex; gap:8px; margin-top:1rem; align-items:center; flex-wrap:wrap; }
+  .b-approve { background:var(--ink); color:var(--bg); border:none; padding:8px 20px; font-size:11px; letter-spacing:0.15em; }
+  .b-reject { background:none; color:var(--shu); border:0.5px solid var(--shu); padding:8px 20px; font-size:11px; letter-spacing:0.15em; }
+
+  /* ===== 一覧 ===== */
+  .filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem; }
+  .pill { font-size:11px; letter-spacing:0.1em; padding:5px 14px; border:0.5px solid var(--line-mid); background:none; color:var(--sub); }
+  .pill.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .tbl { border:0.5px solid var(--line); background:#fff; }
+  .row { display:grid; grid-template-columns:1fr auto; gap:1rem; padding:0.9rem 1.25rem; border-bottom:0.5px solid var(--line); align-items:center; }
+  .row:last-child { border-bottom:none; }
+  .row .t1 { font-size:13px; font-weight:500; line-height:1.6; }
+  .row .t2 { font-size:11px; color:var(--ter); line-height:1.8; }
+  .st { font-size:10px; letter-spacing:0.12em; padding:3px 10px; border:0.5px solid var(--line-mid); color:var(--sub); white-space:nowrap; }
+  .st.pending { border-color:var(--shu); color:var(--shu); }
+  .b-mini { font-size:10px; letter-spacing:0.1em; padding:5px 12px; background:none; border:0.5px solid var(--line-mid); color:var(--ter); }
+  .b-mini.danger { border-color:var(--shu); color:var(--shu); }
+  .empty { font-size:12px; color:var(--ter); text-align:center; padding:2rem; line-height:1.9; }
+  .note { font-size:11px; color:var(--ter); line-height:1.9; margin-top:0.75rem; }
+
+  @media (max-width: 760px) {
+    .shell { grid-template-columns:1fr; }
+    .sidebar { position:static; height:auto; flex-direction:row; flex-wrap:wrap; align-items:center; gap:0; padding:1rem 0.5rem; border-right:none; border-bottom:0.5px solid var(--line); }
+    .sb-brand, .sb-role { width:100%; padding:0 1rem; }
+    .sb-sec { display:none; }
+    .sb-item { border-left:none; border-bottom:2px solid transparent; padding:0.5rem 0.9rem; }
+    .sb-item.on { border-bottom-color:var(--ink); background:none; }
+    .sb-foot { margin:0; padding:0.5rem 0.9rem 0; }
+    .main { padding:1.5rem 1.25rem 4rem; }
+    .row { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== ログイン ===== -->
+<div class="screen active" id="scr-login">
+  <div class="login-wrap">
+    <div class="login-card">
+      <p class="brand">Aporia</p>
+      <p class="brand-sub">運営ダッシュボード</p>
+      <div style="margin-top:2rem; display:flex; flex-direction:column; gap:10px;">
+        <button class="btn-line" onclick="loginGoogle()">Googleでログイン</button>
+        <div style="display:flex; align-items:center; gap:0.75rem; margin:0.25rem 0;">
+          <span style="flex:1; border-top:0.5px solid var(--line);"></span>
+          <span style="font-size:10px; color:var(--ter); letter-spacing:0.2em;">または</span>
+          <span style="flex:1; border-top:0.5px solid var(--line);"></span>
+        </div>
+        <input id="login-email" type="email" placeholder="メールアドレス">
+        <input id="login-pw" type="password" placeholder="パスワード">
+        <div id="turnstile-admin"></div>
+        <button class="btn-ink" onclick="loginEmail()">ログイン</button>
+        <p id="login-err" style="font-size:11px; color:var(--shu); line-height:1.8; display:none;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 権限なし ===== -->
+<div class="screen" id="scr-denied">
+  <div class="login-wrap">
+    <div class="login-card" style="text-align:center;">
+      <p class="brand">Aporia</p>
+      <p style="font-size:13px; color:var(--sub); line-height:2; margin-top:1.5rem;">このアカウントには運営権限がありません。</p>
+      <button class="btn-line" style="margin-top:1.5rem;" onclick="doLogout()">別のアカウントでログイン</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ダッシュボード ===== -->
+<div class="screen" id="scr-dash">
+  <div class="shell">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <p class="sb-brand">Aporia</p>
+      <p class="sb-role">運営ダッシュボード</p>
+
+      <p class="sb-sec">概要</p>
+      <div class="sb-item on" id="sbi-home" onclick="showPage('home')"><span>ホーム</span></div>
+
+      <p class="sb-sec">運営業務</p>
+      <div class="sb-item" id="sbi-review" onclick="showPage('review')"><span>問いの審査</span><span class="cnt" id="cnt-review">0</span></div>
+      <div class="sb-item" id="sbi-reports" onclick="showPage('reports')"><span>通報・問い合わせ</span><span class="cnt" id="cnt-reports">0</span></div>
+      <div class="sb-item" id="sbi-sessions" onclick="showPage('sessions')"><span>セッション</span></div>
+
+      <p class="sb-sec">管理</p>
+      <div class="sb-item" id="sbi-users" onclick="showPage('users')"><span>ユーザー</span></div>
+      <div class="sb-item" id="sbi-venues" onclick="showPage('venues')"><span>会場</span></div>
+
+      <div class="sb-foot">
+        <p style="font-size:10px; color:var(--ter); letter-spacing:0.05em; margin-bottom:0.5rem;" id="who-name"></p>
+        <button onclick="loadAll()">データを更新</button>
+        <button onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- ホーム -->
+      <div class="page on" id="pg-home">
+        <p class="page-title">ホーム</p>
+        <p class="page-sub" id="home-date"></p>
+
+        <div class="kpi-grid">
+          <div class="kpi"><p class="k">会員数</p><p class="v" id="m-users">—</p><p class="d" id="m-users-d"></p></div>
+          <div class="kpi"><p class="k">30日アクティブ</p><p class="v" id="m-active">—</p><p class="d">参加またはホストした人</p></div>
+          <div class="kpi"><p class="k">見込みMRR</p><p class="v" id="m-mrr" style="font-size:26px;">—</p><p class="d" id="m-mrr-d"></p></div>
+          <div class="kpi"><p class="k">今後の開催</p><p class="v" id="m-upcoming">—</p><p class="d" id="m-sessions-d"></p></div>
+        </div>
+
+        <div class="kpi-grid" style="margin-top:12px;">
+          <div class="kpi click" id="m-review-card" onclick="showPage('review')"><p class="k">審査待ち</p><p class="v" id="m-review">—</p><p class="d">クリックで審査へ</p></div>
+          <div class="kpi click" id="m-reports-card" onclick="showPage('reports')"><p class="k">未対応の通報・問い合わせ</p><p class="v" id="m-reports">—</p><p class="d">クリックで対応へ</p></div>
+          <div class="kpi"><p class="k">開催成立率</p><p class="v" id="m-match">—</p><p class="d">確定・終了 ÷（成立＋取り下げ）</p></div>
+          <div class="kpi"><p class="k">キャンセル率</p><p class="v" id="m-cancel">—</p><p class="d" id="m-cancel-d"></p></div>
+        </div>
+
+        <p class="sec-label">登録の推移（直近8週）</p>
+        <div class="chart-card">
+          <div id="reg-chart"></div>
+        </div>
+
+        <p class="sec-label">プラン内訳</p>
+        <div class="chart-card">
+          <div class="plan-bar" id="plan-bar"></div>
+          <div class="legend" id="plan-legend"></div>
+        </div>
+      </div>
+
+      <!-- 審査 -->
+      <div class="page" id="pg-review">
+        <p class="page-title">問いの審査</p>
+        <p class="page-sub">オンライン・対面・プライベートの問いを審査します。対面は会場の割り当ても行えます。メッセージは本人のポータルにそのまま表示されます。</p>
+        <div id="review-list"><p class="empty">読み込み中…</p></div>
+      </div>
+
+      <!-- 通報・問い合わせ -->
+      <div class="page" id="pg-reports">
+        <p class="page-title">通報・問い合わせ</p>
+        <p class="page-sub">アプリ内「運営に連絡」から届いた内容です。通報は優先的に確認してください。</p>
+        <div class="tbl" id="report-list"><p class="empty">読み込み中…</p></div>
+      </div>
+
+      <!-- セッション -->
+      <div class="page" id="pg-sessions">
+        <p class="page-title">セッション</p>
+        <p class="page-sub">すべてのセッションの状態を確認できます。問題があるものは運営権限で取り下げられます。</p>
+        <div class="filters" id="sess-filters">
+          <button class="pill on" data-f="all" onclick="setSessFilter(this)">すべて</button>
+          <button class="pill" data-f="online" onclick="setSessFilter(this)">オンライン</button>
+          <button class="pill" data-f="offline" onclick="setSessFilter(this)">対面</button>
+          <button class="pill" data-f="private" onclick="setSessFilter(this)">プライベート</button>
+          <button class="pill" data-f="pending" onclick="setSessFilter(this)">審査待ち</button>
+          <button class="pill" data-f="live" onclick="setSessFilter(this)">掲載・確定</button>
+          <button class="pill" data-f="closed" onclick="setSessFilter(this)">終了・取り下げ</button>
+        </div>
+        <div class="tbl" id="sess-list"><p class="empty">読み込み中…</p></div>
+      </div>
+
+      <!-- ユーザー -->
+      <div class="page" id="pg-users">
+        <p class="page-title">ユーザー</p>
+        <p class="page-sub">「ご招待」は運営が無償でプランを提供する枠です。請求は発生せず、Stripeの契約状態とは独立して管理されます。付与・解除は即時に本人の機能制限へ反映されます（本人側は再読み込みが必要）。</p>
+        <input id="user-search" type="text" placeholder="名前で検索" style="margin-bottom:1rem; width:260px;" oninput="renderUsers()">
+        <div class="tbl" id="user-list"><p class="empty">読み込み中…</p></div>
+
+        <p class="sec-label">要注意ユーザー（直近90日のペナルティ）</p>
+        <div class="tbl" id="watch-list"><p class="empty">読み込み中…</p></div>
+      </div>
+
+      <!-- 会場 -->
+      <div class="page" id="pg-venues">
+        <p class="page-title">会場</p>
+        <p class="page-sub">対面セッション用の会場マスタです。登録した会場は審査カードで割り当てられ、ホストと参加者に表示されます。</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem;">
+          <input id="v-name" type="text" placeholder="会場名（例：下北沢 ◯◯カフェ）" style="flex:2; min-width:180px;">
+          <input id="v-area" type="text" placeholder="エリア（例：世田谷区）" style="flex:1; min-width:120px;">
+          <input id="v-address" type="text" placeholder="住所・URL・目印など" style="flex:2; min-width:180px;">
+          <button class="b-approve" onclick="addVenue()">追加する</button>
+        </div>
+        <div class="tbl" id="venue-list"><p class="empty">読み込み中…</p></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://kinbyncdkdzfjifgqwva.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpbmJ5bmNka2R6ZmppZmdxd3ZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzQ4OTcsImV4cCI6MjA5ODI1MDg5N30.u0zEGoovrUMBBQf7Mk0ieL8hUgMgah9u6A3Lx6WmnpI';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const esc = (s) => (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const yen = (n) => '¥' + n.toLocaleString('ja-JP');
+  const fmtD = (iso) => { if (!iso) return '—'; const d = new Date(iso); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; };
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ===== ページ切り替え =====
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('on'));
+    const pg = document.getElementById('pg-' + page);
+    const si = document.getElementById('sbi-' + page);
+    if (pg) pg.classList.add('on');
+    if (si) si.classList.add('on');
+    window.scrollTo({ top: 0 });
+  }
+
+  // ===== Turnstile（CAPTCHA） =====
+  const TURNSTILE_SITE_KEY = '0x4AAAAAAD3ogstEyvk89MNU';
+  let _tsWidget = null;
+  function initTurnstile() {
+    if (!TURNSTILE_SITE_KEY || TURNSTILE_SITE_KEY.indexOf('HERE') !== -1) return;
+    if (typeof turnstile === 'undefined') { setTimeout(initTurnstile, 300); return; }
+    const el = document.getElementById('turnstile-admin');
+    if (el && !el.dataset.rendered) {
+      el.dataset.rendered = '1';
+      _tsWidget = turnstile.render(el, { sitekey: TURNSTILE_SITE_KEY, theme: 'light' });
+    }
+  }
+  document.addEventListener('DOMContentLoaded', initTurnstile);
+
+  // ===== 認証 =====
+  async function loginGoogle() {
+    await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href.split('#')[0] } });
+  }
+  async function loginEmail() {
+    const email = document.getElementById('login-email').value.trim();
+    const pw = document.getElementById('login-pw').value;
+    const errEl = document.getElementById('login-err');
+    errEl.style.display = 'none';
+    let captchaToken;
+    try {
+      if (_tsWidget != null && typeof turnstile !== 'undefined') captchaToken = turnstile.getResponse(_tsWidget) || undefined;
+    } catch (_e) { /* noop */ }
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw, options: { captchaToken } });
+    try { if (_tsWidget != null && typeof turnstile !== 'undefined') turnstile.reset(_tsWidget); } catch (_e) { /* noop */ }
+    if (error) { errEl.textContent = 'ログインに失敗しました：' + error.message; errEl.style.display = 'block'; return; }
+    boot();
+  }
+  async function doLogout() { await sb.auth.signOut(); show('scr-login'); }
+
+  async function boot() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { show('scr-login'); return; }
+    const uid = session.user.id;
+    const { data: prof } = await sb.from('profiles').select('name, is_admin').eq('id', uid).maybeSingle();
+    if (!prof || !prof.is_admin) { show('scr-denied'); return; }
+    document.getElementById('who-name').textContent = (prof.name || '運営') + ' さん';
+    const now = new Date();
+    document.getElementById('home-date').textContent =
+      `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 時点のAporiaの状況です。`;
+    show('scr-dash');
+    loadAll();
+  }
+
+  // ===== データ =====
+  let allSessions = [];
+  let allProfiles = [];
+  let partRows = [];
+  let profMap = {};
+  let sessFilter = 'all';
+  let venues = [];
+  let reports = [];
+  let penaltyRows = [];
+
+  async function loadAll() {
+    const [pRes, sRes, ptRes, vRes, rRes, peRes] = await Promise.all([
+      sb.from('profiles').select('id, name, age, occupation, plan_status, comp_plan, created_at, is_admin').order('created_at', { ascending: false }).limit(500),
+      sb.from('sessions').select('*').order('created_at', { ascending: false }).limit(300),
+      sb.from('session_participants').select('session_id, user_id'),
+      sb.from('venues').select('*').order('created_at', { ascending: false }),
+      sb.from('reports').select('*').order('created_at', { ascending: false }).limit(100),
+      sb.from('penalty_events').select('user_id, points, created_at')
+    ]);
+    allProfiles = pRes.data || [];
+    allSessions = sRes.data || [];
+    partRows = ptRes.data || [];
+    venues = vRes.data || [];
+    reports = rRes.data || [];
+    penaltyRows = peRes.data || [];
+    profMap = {};
+    allProfiles.forEach(p => { profMap[p.id] = p; });
+    renderMetrics();
+    renderRegChart();
+    renderPlanBar();
+    renderReview();
+    renderReports();
+    renderWatchlist();
+    renderSessions();
+    renderVenues();
+    renderUsers();
+  }
+
+  // 実効プラン：招待枠（comp_plan）→ 契約（plan_status）→ TRIAL の順で判定
+  function planOf(p) {
+    const c = p && p.comp_plan;
+    if (c === 'PREMIUM' || c === 'STANDARD') return c;
+    const v = p && p.plan_status;
+    return (v === 'PREMIUM' || v === 'STANDARD') ? v : 'TRIAL';
+  }
+  // 招待枠（無償提供）かどうか
+  function isComp(p) {
+    const c = p && p.comp_plan;
+    return c === 'PREMIUM' || c === 'STANDARD';
+  }
+
+  // ===== KPI =====
+  function renderMetrics() {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const total = allProfiles.length;
+    const newThisMonth = allProfiles.filter(p => p.created_at && new Date(p.created_at) >= monthStart).length;
+    document.getElementById('m-users').innerHTML = total + '<span class="unit">人</span>';
+    document.getElementById('m-users-d').textContent = `今月 +${newThisMonth}人`;
+
+    // 30日アクティブ：直近30日に開催されたセッションの参加者＋直近30日に問いを立てたホスト
+    const d30 = Date.now() - 30 * 86400000;
+    const recentSessIds = new Set(allSessions.filter(s => {
+      const t = s.scheduled_at ? new Date(s.scheduled_at).getTime() : (s.created_at ? new Date(s.created_at).getTime() : 0);
+      return t >= d30;
+    }).map(s => s.id));
+    const active = new Set();
+    partRows.forEach(r => { if (recentSessIds.has(r.session_id)) active.add(r.user_id); });
+    allSessions.forEach(s => { if (s.created_at && new Date(s.created_at).getTime() >= d30 && s.status !== 'cancelled') active.add(s.host_id); });
+    document.getElementById('m-active').innerHTML = active.size + '<span class="unit">人</span>';
+
+    // 見込みMRR：招待枠（無償）は除外して算出する
+    const paying = allProfiles.filter(p => !isComp(p));
+    const std = paying.filter(p => planOf(p) === 'STANDARD').length;
+    const prm = paying.filter(p => planOf(p) === 'PREMIUM').length;
+    const compCount = allProfiles.filter(p => isComp(p)).length;
+    document.getElementById('m-mrr').textContent = yen(std * 6250 + prm * 12500);
+    document.getElementById('m-mrr-d').textContent =
+      `STANDARD ${std}人 ／ PREMIUM ${prm}人${compCount > 0 ? ` ／ ご招待 ${compCount}人` : ''}`;
+
+    // 審査待ち・未対応通報
+    const pending = allSessions.filter(s => s.status === 'pending');
+    document.getElementById('m-review').innerHTML = pending.length + '<span class="unit">件</span>';
+    document.getElementById('m-review-card').classList.toggle('attn', pending.length > 0);
+    const cr = document.getElementById('cnt-review');
+    cr.textContent = pending.length;
+    cr.classList.toggle('show', pending.length > 0);
+
+    const openReports = reports.filter(r => r.status !== 'resolved');
+    document.getElementById('m-reports').innerHTML = openReports.length + '<span class="unit">件</span>';
+    document.getElementById('m-reports-card').classList.toggle('attn', openReports.length > 0);
+    const crp = document.getElementById('cnt-reports');
+    crp.textContent = openReports.length;
+    crp.classList.toggle('show', openReports.length > 0);
+
+    // 今後の開催・累計
+    const upcoming = allSessions.filter(s =>
+      ['published','recruiting_filled','confirmed'].includes(s.status)
+      && s.scheduled_at && new Date(s.scheduled_at).getTime() > Date.now()).length;
+    const heldOrLive = allSessions.filter(s => s.status !== 'cancelled' && s.status !== 'rejected' && s.status !== 'pending').length;
+    document.getElementById('m-upcoming').innerHTML = upcoming + '<span class="unit">件</span>';
+    document.getElementById('m-sessions-d').textContent = `セッション累計 ${heldOrLive}件`;
+
+    // 健全性：開催成立率 ＝ 確定・終了 ÷（確定・終了＋取り下げ）
+    const settled = allSessions.filter(s => ['confirmed','ended'].includes(s.status)).length;
+    const cancelled = allSessions.filter(s => s.status === 'cancelled').length;
+    const denom = settled + cancelled;
+    document.getElementById('m-match').textContent = denom > 0 ? Math.round(settled / denom * 100) + '%' : '—';
+    document.getElementById('m-cancel').textContent = denom > 0 ? Math.round(cancelled / denom * 100) + '%' : '—';
+    document.getElementById('m-cancel-d').textContent = `取り下げ ${cancelled}件`;
+  }
+
+  // ===== 登録推移（直近8週の棒グラフ、SVG） =====
+  function renderRegChart() {
+    const box = document.getElementById('reg-chart');
+    if (!box) return;
+    const now = new Date();
+    // 今週の月曜0時を起点に8週分のバケツを作る
+    const mondayOffset = (now.getDay() + 6) % 7;
+    const thisMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
+    const buckets = [];
+    for (let i = 7; i >= 0; i--) {
+      const start = new Date(thisMonday.getTime() - i * 7 * 86400000);
+      buckets.push({ start, count: 0 });
+    }
+    allProfiles.forEach(p => {
+      if (!p.created_at) return;
+      const t = new Date(p.created_at).getTime();
+      for (let i = buckets.length - 1; i >= 0; i--) {
+        if (t >= buckets[i].start.getTime()) {
+          if (t < buckets[i].start.getTime() + 7 * 86400000) buckets[i].count++;
+          break;
+        }
+      }
+    });
+    const max = Math.max(1, ...buckets.map(b => b.count));
+    const W = 640, H = 150, pad = 8, bw = (W - pad * 2) / buckets.length;
+    let bars = '';
+    buckets.forEach((b, i) => {
+      const h = Math.round((b.count / max) * (H - 45));
+      const x = pad + i * bw + bw * 0.18;
+      const y = H - 30 - h;
+      const label = `${b.start.getMonth() + 1}/${b.start.getDate()}`;
+      bars += `<rect x="${x}" y="${y}" width="${bw * 0.64}" height="${h}" fill="#1a1a18" opacity="${i === buckets.length - 1 ? 1 : 0.75}"/>`;
+      bars += `<text x="${x + bw * 0.32}" y="${y - 6}" text-anchor="middle" font-size="11" fill="#5f5e58" font-family="'Noto Serif JP',serif">${b.count > 0 ? b.count : ''}</text>`;
+      bars += `<text x="${x + bw * 0.32}" y="${H - 12}" text-anchor="middle" font-size="10" fill="#9a9890" font-family="'Noto Serif JP',serif">${label}</text>`;
+    });
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+      <line x1="${pad}" y1="${H - 30}" x2="${W - pad}" y2="${H - 30}" stroke="#ddd9cf" stroke-width="1"/>
+      ${bars}</svg>
+      <p style="font-size:11px; color:var(--ter); margin-top:0.4rem; letter-spacing:0.05em;">週ごとの新規登録者数（週の始まりは月曜）</p>`;
+  }
+
+  // ===== プラン内訳バー =====
+  function renderPlanBar() {
+    const bar = document.getElementById('plan-bar');
+    const leg = document.getElementById('plan-legend');
+    if (!bar || !leg) return;
+    const total = allProfiles.length || 1;
+    const paying = allProfiles.filter(p => !isComp(p));
+    const trial = paying.filter(p => planOf(p) === 'TRIAL').length;
+    const std = paying.filter(p => planOf(p) === 'STANDARD').length;
+    const prm = paying.filter(p => planOf(p) === 'PREMIUM').length;
+    const compN = allProfiles.filter(p => isComp(p)).length;
+    bar.innerHTML =
+      `<div class="seg1" style="width:${trial / total * 100}%"></div>` +
+      `<div class="seg2" style="width:${std / total * 100}%"></div>` +
+      `<div class="seg3" style="width:${prm / total * 100}%"></div>` +
+      `<div style="width:${compN / total * 100}%; background:repeating-linear-gradient(45deg, #c8c4b8, #c8c4b8 3px, #F1EEE6 3px, #F1EEE6 6px);"></div>`;
+    leg.innerHTML =
+      `<span><span class="sw" style="background:var(--bg2);"></span>無料体験 ${trial}人（${Math.round(trial / total * 100)}%）</span>` +
+      `<span><span class="sw" style="background:#b9b3a3;"></span>STANDARD ${std}人（${Math.round(std / total * 100)}%）</span>` +
+      `<span><span class="sw" style="background:var(--ink);"></span>PREMIUM ${prm}人（${Math.round(prm / total * 100)}%）</span>` +
+      (compN > 0 ? `<span><span class="sw" style="background:repeating-linear-gradient(45deg, #c8c4b8, #c8c4b8 3px, #F1EEE6 3px, #F1EEE6 6px);"></span>ご招待 ${compN}人（${Math.round(compN / total * 100)}%）</span>` : '');
+  }
+
+  // 会場文字列：URLを除いた名前部分だけを短く表示
+  function venueName(v) {
+    return String(v || '')
+      .replace(/https?:\/\/[^\s（）()]+/g, '')
+      .replace(/[（(]\s*[)）]/g, '')
+      .replace(/[（(]\s*$/, '')
+      .trim() || '指定あり';
+  }
+
+  // メール通知（審査結果・中止）。失敗しても本処理は妨げない
+  async function notifySessionEvent(sessionId, event) {
+    try {
+      const { data: { session: as } } = await sb.auth.getSession();
+      if (!as) return;
+      fetch(SUPABASE_URL + '/functions/v1/send-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${as.access_token}`,
+        },
+        body: JSON.stringify({ session_id: sessionId, event: event }),
+      }).catch(() => {});
+    } catch (e) { console.warn('通知メールをスキップ:', e); }
+  }
+
+  function typeBadge(s) {
+    if (s.is_offline) return '<span class="type-badge off">対面</span>';
+    if (s.is_private) return '<span class="type-badge">プライベート</span>';
+    return '<span class="type-badge">オンライン</span>';
+  }
+  function hostLine(s) {
+    const h = profMap[s.host_id];
+    if (!h) return 'ホスト：不明';
+    const parts = [h.name || '名称未設定'];
+    if (h.age != null) parts.push(h.age + '歳');
+    if (h.occupation) parts.push(h.occupation);
+    return 'ホスト：' + esc(parts.join('・')) + '（' + planOf(h) + '）';
+  }
+
+  // ===== 審査 =====
+  function renderReview() {
+    const box = document.getElementById('review-list');
+    const pending = allSessions.filter(s => s.status === 'pending');
+    if (pending.length === 0) {
+      box.innerHTML = '<p class="empty">審査待ちの問いはありません。</p>';
+      return;
+    }
+    box.innerHTML = pending.map(s => {
+      const venueSel = s.is_offline ? `
+        <div style="margin-top:0.75rem;">
+          <p style="font-size:10px; letter-spacing:0.2em; color:var(--ter); margin-bottom:0.4rem;">会場を割り当てる（承認時に本人と一覧に表示されます）</p>
+          <select id="venue-${s.id}" style="width:100%;">
+            <option value="">未割当（あとで決める）</option>
+            ${venues.map(v => `<option value="${esc(v.name)}${v.address ? '（' + esc(v.address) + '）' : ''}">${esc(v.name)}${v.area ? '｜' + esc(v.area) : ''}</option>`).join('')}
+          </select>
+        </div>` : '';
+      return `
+      <div class="review-card" id="rc-${s.id}">
+        <div class="rc-head">${typeBadge(s)}<p class="rc-title">${esc(s.title)}</p></div>
+        <p class="rc-meta">${hostLine(s)}<br>
+          日時：${esc(s.schedule_time || '未定')} ／ 提出：${fmtD(s.created_at)}
+          ${s.is_offline ? ' ／ 希望エリア：' + esc(s.area || '未指定') : ''}
+        </p>
+        ${s.background ? `<p class="rc-bg">${esc(s.background)}</p>` : ''}
+        ${venueSel}
+        <div style="margin-top:0.75rem;">
+          <p style="font-size:10px; letter-spacing:0.2em; color:var(--ter); margin-bottom:0.4rem;">ホストへのメッセージ（本人のポータルに表示。修正依頼・却下では必須）</p>
+          <textarea id="note-${s.id}" rows="2" style="width:100%; resize:vertical;" placeholder="例：「◯◯という表現を△△に変えていただければ掲載できます」／「会場は下北沢◯◯カフェを手配しました。当日は…」"></textarea>
+        </div>
+        <div class="rc-actions" style="justify-content:flex-end;">
+          <button class="b-approve" onclick="approveSession('${s.id}')">掲載する</button>
+          <button class="b-reject" style="border-color:var(--line-mid); color:var(--sub);" onclick="reviewBack('${s.id}', 'revision')">修正をお願いする</button>
+          <button class="b-reject" onclick="reviewBack('${s.id}', 'rejected')">却下する</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function approveSession(id) {
+    const note = ((document.getElementById('note-' + id) || {}).value || '').trim();
+    const upd = { status: 'published', review_action: 'approved', review_note: note || null };
+    const vSel = document.getElementById('venue-' + id);
+    if (vSel && vSel.value) upd.venue = vSel.value;
+    const { error } = await sb.from('sessions').update(upd).eq('id', id);
+    if (error) { alert('更新に失敗しました：' + error.message); return; }
+    notifySessionEvent(id, 'review_result');
+    await loadAll();
+  }
+
+  // 修正依頼（revision）／却下（rejected）：どちらもstatusはrejected、扱いをreview_actionで区別
+  async function reviewBack(id, action) {
+    const note = ((document.getElementById('note-' + id) || {}).value || '').trim();
+    const label = action === 'revision' ? '修正依頼' : '却下';
+    if (!note) { alert(label + 'にはホストへのメッセージが必須です。本人のポータルにそのまま表示されます。'); return; }
+    const extra = action === 'revision'
+      ? '修正のうえ再提出できる旨が本人に案内されます。'
+      : 'この問いは掲載されません。';
+    if (!confirm(`この問いを「${label}」にしますか？\n${extra}利用枠は消費されません。`)) return;
+    const { error } = await sb.from('sessions')
+      .update({ status: 'rejected', review_action: action, review_note: note })
+      .eq('id', id);
+    if (error) { alert('更新に失敗しました：' + error.message); return; }
+    notifySessionEvent(id, 'review_result');
+    await loadAll();
+  }
+
+  // ===== セッション一覧 =====
+  function setSessFilter(btn) {
+    document.querySelectorAll('#sess-filters .pill').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    sessFilter = btn.dataset.f;
+    renderSessions();
+  }
+
+  const ST_LABEL = { pending:'審査待ち', published:'掲載中', recruiting_filled:'仮確定', confirmed:'確定', ended:'終了', cancelled:'取り下げ', rejected:'差し戻し', draft:'下書き' };
+
+  function renderSessions() {
+    const box = document.getElementById('sess-list');
+    let rows = allSessions;
+    if (sessFilter === 'online') rows = rows.filter(s => !s.is_offline && !s.is_private);
+    if (sessFilter === 'offline') rows = rows.filter(s => s.is_offline);
+    if (sessFilter === 'private') rows = rows.filter(s => s.is_private);
+    if (sessFilter === 'pending') rows = rows.filter(s => s.status === 'pending');
+    if (sessFilter === 'live') rows = rows.filter(s => ['published','recruiting_filled','confirmed'].includes(s.status));
+    if (sessFilter === 'closed') rows = rows.filter(s => ['ended','cancelled','rejected'].includes(s.status));
+    rows = rows.slice(0, 60);
+    if (rows.length === 0) { box.innerHTML = '<p class="empty">該当するセッションはありません。</p>'; return; }
+
+    const countBySession = {};
+    partRows.forEach(r => { countBySession[r.session_id] = (countBySession[r.session_id] || 0) + 1; });
+
+    box.innerHTML = rows.map(s => {
+      const cnt = (countBySession[s.id] || 0) + 1;
+      const cap = (s.capacity && s.capacity >= 2) ? s.capacity : 3;
+      const cancellable = !['cancelled','ended','rejected'].includes(s.status);
+      return `
+      <div class="row">
+        <div>
+          <p class="t1">${esc(s.title)}</p>
+          <p class="t2">${typeBadge(s)}　${esc(s.schedule_time || '日程未定')}${s.venue ? ' ／ 会場：' + esc(venueName(s.venue)) : ''} ／ ${hostLine(s)} ／ 人数 ${cnt}/${cap}</p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span class="st ${s.status === 'pending' ? 'pending' : ''}">${ST_LABEL[s.status] || esc(s.status)}</span>
+          ${cancellable ? `<button class="b-mini danger" onclick="adminCancel('${s.id}')">取り下げ</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function adminCancel(id) {
+    const reason = prompt('運営として取り下げます。理由（ホストに表示されます）：', '');
+    if (reason === null) return;
+    const { error } = await sb.from('sessions')
+      .update({ status: 'cancelled', review_note: reason.trim() || '運営により取り下げられました' })
+      .eq('id', id);
+    if (error) { alert('更新に失敗しました：' + error.message); return; }
+    notifySessionEvent(id, 'session_cancelled');
+    await loadAll();
+  }
+
+  // ===== 通報・問い合わせ =====
+  function renderReports() {
+    const box = document.getElementById('report-list');
+    if (!box) return;
+    if (reports.length === 0) { box.innerHTML = '<p class="empty">通報・問い合わせはありません。</p>'; return; }
+    box.innerHTML = reports.slice(0, 30).map(r => {
+      const p = profMap[r.user_id];
+      const who = p ? (p.name || '名称未設定') : '不明なユーザー';
+      const open = r.status !== 'resolved';
+      return `
+      <div class="row" style="${open ? '' : 'opacity:0.55;'}">
+        <div>
+          <p class="t1"><span class="st ${open && r.kind === '通報' ? 'pending' : ''}">${esc(r.kind || '問い合わせ')}</span>　${esc(who)}　<span style="font-size:11px; color:var(--ter);">${fmtD(r.created_at)}</span></p>
+          <p class="t2" style="margin-top:0.35rem; white-space:pre-wrap;">${esc(r.body)}</p>
+        </div>
+        <div>
+          <button class="b-mini" onclick="toggleReport('${r.id}', ${open})">${open ? '対応済みにする' : '未対応に戻す'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function toggleReport(id, resolve) {
+    const { error } = await sb.from('reports')
+      .update({ status: resolve ? 'resolved' : 'open' })
+      .eq('id', id);
+    if (error) { alert('更新に失敗しました：' + error.message); return; }
+    const r = reports.find(x => String(x.id) === String(id));
+    if (r) r.status = resolve ? 'resolved' : 'open';
+    renderReports();
+    renderMetrics();
+  }
+
+  // ===== 要注意ユーザー（直近90日のペナルティ合計） =====
+  function renderWatchlist() {
+    const box = document.getElementById('watch-list');
+    if (!box) return;
+    const d90 = Date.now() - 90 * 86400000;
+    const byUser = {};
+    penaltyRows.forEach(r => {
+      if (r.created_at && new Date(r.created_at).getTime() < d90) return;
+      byUser[r.user_id] = (byUser[r.user_id] || 0) + (r.points || 0);
+    });
+    const rows = Object.entries(byUser)
+      .filter(([, pts]) => pts > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20);
+    if (rows.length === 0) { box.innerHTML = '<p class="empty">直近90日にペナルティのあるユーザーはいません。</p>'; return; }
+    box.innerHTML = rows.map(([uid, pts]) => {
+      const p = profMap[uid];
+      const name = p ? (p.name || '名称未設定') : '不明なユーザー';
+      const plan = p ? planOf(p) : '—';
+      const heavy = pts >= 3;
+      return `
+      <div class="row">
+        <div>
+          <p class="t1">${esc(name)}</p>
+          <p class="t2">${plan} ／ 5点で参加停止の制度上、${5 - pts > 0 ? '残り' + (5 - pts) + '点' : '停止水準'}</p>
+        </div>
+        <span class="st ${heavy ? 'pending' : ''}">${pts}点</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ===== 会場管理 =====
+  function renderVenues() {
+    const box = document.getElementById('venue-list');
+    if (!box) return;
+    if (venues.length === 0) { box.innerHTML = '<p class="empty">まだ会場が登録されていません。上のフォームから追加してください。</p>'; return; }
+    box.innerHTML = venues.map(v => `
+      <div class="row">
+        <div>
+          <p class="t1">${esc(v.name)}</p>
+          <p class="t2">${esc(v.area || '—')}${v.address ? ' ／ ' + esc(v.address) : ''}</p>
+        </div>
+        <button class="b-mini danger" onclick="deleteVenue('${v.id}')">削除</button>
+      </div>`).join('');
+  }
+
+  async function addVenue() {
+    const name = (document.getElementById('v-name').value || '').trim();
+    const area = (document.getElementById('v-area').value || '').trim();
+    const address = (document.getElementById('v-address').value || '').trim();
+    if (!name) { alert('会場名を入力してください。'); return; }
+    const { error } = await sb.from('venues').insert({ name, area: area || null, address: address || null });
+    if (error) { alert('追加に失敗しました：' + error.message); return; }
+    ['v-name','v-area','v-address'].forEach(id => { document.getElementById(id).value = ''; });
+    await loadAll();
+  }
+
+  async function deleteVenue(id) {
+    if (!confirm('この会場を削除しますか？（割り当て済みのセッションには影響しません）')) return;
+    const { error } = await sb.from('venues').delete().eq('id', id);
+    if (error) { alert('削除に失敗しました：' + error.message); return; }
+    await loadAll();
+  }
+
+  // ===== ユーザー =====
+  function renderUsers() {
+    const box = document.getElementById('user-list');
+    const q = (document.getElementById('user-search').value || '').trim();
+    let rows = allProfiles;
+    if (q) rows = rows.filter(p => (p.name || '').includes(q));
+    rows = rows.slice(0, 100);
+    if (rows.length === 0) { box.innerHTML = '<p class="empty">該当するユーザーはいません。</p>'; return; }
+    box.innerHTML = rows.map(p => {
+      const meta = [];
+      if (p.age != null) meta.push(p.age + '歳');
+      if (p.occupation) meta.push(p.occupation);
+      const plan = planOf(p);
+      const comp = isComp(p);
+      const contract = (p.plan_status === 'PREMIUM' || p.plan_status === 'STANDARD') ? p.plan_status : 'TRIAL';
+      const compVal = comp ? p.comp_plan : '';
+      return `
+      <div class="row">
+        <div>
+          <p class="t1">${esc(p.name || '名称未設定')}${p.is_admin ? '　<span class="st">運営</span>' : ''}${comp ? '　<span class="st">ご招待</span>' : ''}</p>
+          <p class="t2">${esc(meta.join('・') || '—')} ／ 登録 ${fmtD(p.created_at)} ／ 実効プラン <strong>${plan}</strong>${comp ? `（契約は ${contract}）` : ''}</p>
+        </div>
+        <div>
+          <select onchange="changeCompPlan('${p.id}', this)" title="招待枠（無償提供）。請求は発生しません。">
+            <option value="" ${!comp ? 'selected' : ''}>招待なし</option>
+            <option value="STANDARD" ${compVal === 'STANDARD' ? 'selected' : ''}>ご招待：STANDARD</option>
+            <option value="PREMIUM" ${compVal === 'PREMIUM' ? 'selected' : ''}>ご招待：PREMIUM</option>
+          </select>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // 招待枠（comp_plan）の付与・解除。Stripeの契約（plan_status）には一切触れないため請求は発生しない
+  async function changeCompPlan(uid, sel) {
+    const val = sel.value;
+    const msg = val
+      ? `このユーザーに「ご招待：${val}」を付与しますか？\n請求は発生せず、無償で ${val} の機能が使えるようになります。`
+      : 'このユーザーの招待枠を解除しますか？\n以降は本人の契約状態（未契約ならTRIAL）に戻ります。';
+    if (!confirm(msg)) { renderUsers(); return; }
+    const { error } = await sb.from('profiles').update({ comp_plan: val || null }).eq('id', uid);
+    if (error) { alert('変更に失敗しました：' + error.message); renderUsers(); return; }
+    const p = allProfiles.find(x => x.id === uid);
+    if (p) p.comp_plan = val || null;
+    renderUsers();
+    renderMetrics();
+    renderPlanBar();
+  }
+
+  // OAuthリダイレクト復帰も拾う
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN') boot();
+  });
+  boot();
+</script>
+</body>
+</html>
